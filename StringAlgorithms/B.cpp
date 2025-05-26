@@ -1,44 +1,71 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-typedef long long ll;
-ll solve(ll n, ll m, ll a, ll b) {
-    // Initial analysis:
-    // - Mouf wants to minimize turns (will cut the larger dimension first)
-    // - Fouad wants to maximize turns (will move to avoid cuts)
+const int N = 2e5 + 5;
+vector<int> adj[N];
+long long a[N], threat[N], dp[N][2]; // dp[u][0] = max sum starting with +, dp[u][1] = max sum starting with -
+int parent[N];
 
-    // We can prove that optimal play leads to this pattern:
-    // 1. Mouf always cuts the larger dimension in half
-    // 2. Fouad always positions his monster optimally after each cut
+void dfs(int u, int p) {
+    parent[u] = p;
 
-    long long turns = 0;
+    dp[u][0] = a[u];
+    dp[u][1] = -a[u];
 
-    // Continue until we have a 1x1 grid
-    while (n > 1 || m > 1) {
-        turns++;
+    for(int v : adj[u]) {
+        if(v == p) continue;
+        dfs(v, u);
 
-        if (n >= m) {
-            // If rows >= columns, Mouf cuts rows
-            n = (n + 1) / 2;
-        } else {
-            // Otherwise Mouf cuts columns
-            m = (m + 1) / 2;
-        }
+        dp[u][0] = max(dp[u][0], a[u] + dp[v][1]);
+        dp[u][1] = max(dp[u][1], dp[v][0] - a[u]);
     }
 
-    return turns;
+    threat[u] = a[u];
+    long long current = a[u];
+    int v = u;
+    int sign = -1;
+
+    while(v != 0) {
+        v = parent[v];
+        if(v == 0) break;
+        current += sign * a[v];
+        threat[u] = max(threat[u], current);
+        sign *= -1;
+    }
 }
 
 int main() {
-    ios::sync_with_stdio(false);
+    ios_base::sync_with_stdio(false);
     cin.tie(NULL);
 
     int t;
     cin >> t;
+    while(t--) {
+        int n;
+        cin >> n;
 
-    while (t--) {
-        ll n, m, a, b; cin >> n >> m >> a >> b;
-        cout << solve(n, m, a, b) << '\n';
+        for(int i = 1; i <= n; i++) {
+            cin >> a[i];
+            adj[i].clear();
+            threat[i] = 0;
+            parent[i] = 0;
+            dp[i][0] = dp[i][1] = 0;
+        }
+
+        for(int i = 0; i < n-1; i++) {
+            int u, v;
+            cin >> u >> v;
+            adj[u].push_back(v);
+            adj[v].push_back(u);
+        }
+
+        dfs(1, 0);
+
+        for(int i = 1; i <= n; i++) {
+            cout << threat[i];
+            if(i < n) cout << " ";
+        }
+        cout << "\n";
     }
 
     return 0;
