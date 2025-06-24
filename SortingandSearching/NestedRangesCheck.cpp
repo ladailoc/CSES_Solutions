@@ -2,55 +2,49 @@
 using namespace std;
 
 struct Range {
-    int x, y, index;
+    int a, b, idx;
 };
 
-bool cmpStart(const Range &a, const Range &b) {
-    if (a.x == b.x) return a.y > b.y;
-    return a.x < b.x;
-}
-
 int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-
     int n;
     cin >> n;
-
     vector<Range> ranges(n);
+
     for (int i = 0; i < n; ++i) {
-        cin >> ranges[i].x >> ranges[i].y;
-        ranges[i].index = i;
+        cin >> ranges[i].a >> ranges[i].b;
+        ranges[i].idx = i;
     }
 
-    sort(ranges.begin(), ranges.end(), cmpStart);
+    // Sort by start ascending, end descending
+    sort(ranges.begin(), ranges.end(), [](const Range &r1, const Range &r2) {
+        if (r1.a == r2.a)
+            return r1.b > r2.b;
+        return r1.a < r2.a;
+    });
 
     vector<int> contains(n), contained(n);
 
-    // Check for "contained by some other range"
-    int maxY = 0;
+    // Check which ranges are contained in others
+    int max_b = 0;
+    for (const auto &r : ranges) {
+        if (r.b <= max_b)
+            contained[r.idx] = 1;
+        max_b = max(max_b, r.b);
+    }
+
+    // Check which ranges contain others
+    int min_b = INT_MAX;
     for (int i = n - 1; i >= 0; --i) {
-        if (ranges[i].y <= maxY) {
-            contained[ranges[i].index] = 1;
-        }
-        maxY = max(maxY, ranges[i].y);
+        const auto &r = ranges[i];
+        if (r.b >= min_b)
+            contains[r.idx] = 1;
+        min_b = min(min_b, r.b);
     }
 
-    // Check for "contains some other range"
-    int minY = INT_MAX;
-    for (int i = 0; i < n; ++i) {
-        if (ranges[i].y >= minY) {
-            contains[ranges[i].index] = 1;
-        }
-        minY = min(minY, ranges[i].y);
-    }
-
-    for (int i = 0; i < n; ++i)
-        cout << contains[i] << " ";
-    cout << "\n";
-    for (int i = 0; i < n; ++i)
-        cout << contained[i] << " ";
-    cout << "\n";
+    for (int x : contains) cout << x << ' ';
+    cout << '\n';
+    for (int x : contained) cout << x << ' ';
+    cout << '\n';
 
     return 0;
 }
